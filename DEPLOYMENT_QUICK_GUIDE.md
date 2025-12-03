@@ -7,9 +7,9 @@
 # Production
 APP_ENV=production
 APP_DEBUG=false
-APP_URL=https://api.zainzo.com
+APP_URL=https://api.task.zainzo.com
 FRONTEND_URL=https://task.zainzo.com
-GOOGLE_REDIRECT_URI=https://api.zainzo.com/auth/google/callback
+GOOGLE_REDIRECT_URI=https://api.task.zainzo.com/auth/google/callback
 SESSION_DOMAIN=.zainzo.com
 SANCTUM_STATEFUL_DOMAINS=task.zainzo.com
 
@@ -33,7 +33,7 @@ SANCTUM_STATEFUL_DOMAINS=task.zainzo.com
 
 ### 3. Domain Configuration
 - **Frontend:** `https://task.zainzo.com`
-- **Backend:** `https://api.zainzo.com`
+- **Backend:** `https://api.task.zainzo.com`
 
 ---
 
@@ -56,7 +56,7 @@ php artisan key:generate
 ### 3. Update Google OAuth
 Di **Google Cloud Console**, tambahkan:
 - Authorized JavaScript origins: `https://task.zainzo.com`
-- Authorized redirect URIs: `https://api.zainzo.com/auth/google/callback`
+- Authorized redirect URIs: `https://api.task.zainzo.com/auth/google/callback`
 
 ### 4. Run Migrations
 ```bash
@@ -82,7 +82,7 @@ APP_ENV=local
 # APP_DEBUG=false
 APP_DEBUG=true
 
-# APP_URL=https://api.zainzo.com
+# APP_URL=https://api.task.zainzo.com
 APP_URL=http://localhost:8000
 ```
 

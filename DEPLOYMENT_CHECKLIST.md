@@ -3,7 +3,7 @@
 ## 📋 Domain Configuration
 
 **Frontend:** `https://task.zainzo.com`  
-**Backend:** `https://api.zainzo.com`
+**Backend:** `https://api.task.zainzo.com`
 
 ---
 
@@ -13,9 +13,9 @@
 
 - [x] `APP_ENV=production`
 - [x] `APP_DEBUG=false` (PENTING: harus false di production!)
-- [x] `APP_URL=https://api.zainzo.com`
+- [x] `APP_URL=https://api.task.zainzo.com`
 - [x] `FRONTEND_URL=https://task.zainzo.com`
-- [x] `GOOGLE_REDIRECT_URI=https://api.zainzo.com/auth/google/callback`
+- [x] `GOOGLE_REDIRECT_URI=https://api.task.zainzo.com/auth/google/callback`
 - [x] `SANCTUM_STATEFUL_DOMAINS=task.zainzo.com`
 - [x] `SESSION_DOMAIN=.zainzo.com`
 - [ ] Update `DB_HOST`, `DB_DATABASE`, `DB_USERNAME`, `DB_PASSWORD` sesuai production database
@@ -28,11 +28,11 @@ Pastikan di **Google Cloud Console** sudah dikonfigurasi:
 **Authorized JavaScript origins:**
 
 - `https://task.zainzo.com`
-- `https://api.zainzo.com`
+- `https://api.task.zainzo.com`
 
 **Authorized redirect URIs:**
 
-- `https://api.zainzo.com/auth/google/callback`
+- `https://api.task.zainzo.com/auth/google/callback`
 
 ### 3. CORS Configuration
 
@@ -86,14 +86,14 @@ chown -R www-data:www-data storage bootstrap/cache
 server {
     listen 80;
     listen [::]:80;
-    server_name api.zainzo.com;
+    server_name api.task.zainzo.com;
     return 301 https://$host$request_uri;
 }
 
 server {
     listen 443 ssl http2;
     listen [::]:443 ssl http2;
-    server_name api.zainzo.com;
+    server_name api.task.zainzo.com;
 
     root /path/to/zainzotask-backend-laravel/public;
     index index.php index.html;
@@ -143,9 +143,9 @@ sudo systemctl restart apache2
 
 ```bash
 # Menggunakan Let's Encrypt (Certbot)
-sudo certbot --nginx -d api.zainzo.com
+sudo certbot --nginx -d api.task.zainzo.com
 # atau
-sudo certbot --apache -d api.zainzo.com
+sudo certbot --apache -d api.task.zainzo.com
 ```
 
 ### 9. Environment Variables di Server
@@ -176,7 +176,7 @@ Jika menggunakan shared hosting atau cPanel, pastikan:
 Update file `.env` atau `.env.production`:
 
 ```env
-VITE_API_URL=https://api.zainzo.com
+VITE_API_URL=https://api.task.zainzo.com
 VITE_FRONTEND_URL=https://task.zainzo.com
 VITE_GOOGLE_CLIENT_ID=677524265473-8rr4si61qtkhlo6osb8288ie0006094n.apps.googleusercontent.com
 ```
@@ -187,7 +187,7 @@ Pastikan semua API calls menggunakan env variable:
 
 ```typescript
 // services/api.ts atau axios config
-const API_URL = import.meta.env.VITE_API_URL || 'https://api.zainzo.com';
+const API_URL = import.meta.env.VITE_API_URL || 'https://api.task.zainzo.com';
 axios.defaults.baseURL = `${API_URL}/api`;
 ```
 
@@ -245,14 +245,14 @@ CNAME   api     [Backend Server]    Auto
 
 ```bash
 # Test health check
-curl https://api.zainzo.com/api/health-check
+curl https://api.task.zainzo.com/api/health-check
 
 # Test CORS
 curl -H "Origin: https://task.zainzo.com" \
      -H "Access-Control-Request-Method: POST" \
      -H "Access-Control-Request-Headers: Content-Type" \
      -X OPTIONS \
-     https://api.zainzo.com/api/auth/google
+     https://api.task.zainzo.com/api/auth/google
 ```
 
 ### Frontend Testing
