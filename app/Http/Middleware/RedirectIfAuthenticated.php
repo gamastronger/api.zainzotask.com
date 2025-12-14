@@ -2,13 +2,12 @@
 
 namespace App\Http\Middleware;
 
-use App\Providers\RouteServiceProvider;
-use Illuminate\Auth\Middleware\RedirectIfAuthenticated as Middleware;
+use Closure;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Symfony\Component\HttpFoundation\Response;
 
-class RedirectIfAuthenticated extends Middleware
+class RedirectIfAuthenticated
 {
     /**
      * Handle an incoming request.
