@@ -8,7 +8,8 @@ return [
 
     'allowed_origins' => [
         'https://task.zainzo.com',
-        // 'http://localhost:5173', // Local development
+        // 'http://localhost:5173',
+        'http://localhost:5173', // Local development
     ],
 
     'allowed_origins_patterns' => [],

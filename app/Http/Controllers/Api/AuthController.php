@@ -14,6 +14,14 @@ class AuthController extends Controller
      */
     public function redirectToGoogle(Request $request)
     {
+    //     dd([
+    //     'app_env' => app()->environment(),
+    //     'app_url' => config('app.url'),
+    //     'frontend_url' => config('app.frontend_url'),
+    //     'google_redirect' => config('services.google.redirect'),
+    //     'raw_env_app_url' => env('APP_URL'),
+    // ]);
+
         $clientId = config('services.google.client_id');
         $redirectUri = config('services.google.redirect');
 
