@@ -17,10 +17,8 @@ use Illuminate\Support\Facades\Route;
 |
 */
 
-// Auth routes (public)
-Route::get('/auth/google', [AuthController::class, 'redirectToGoogle']);
-Route::post('/auth/google/callback', [AuthController::class, 'googleCallback']);
-Route::get('/auth/user', [AuthController::class, 'getUser']);
+// Note: OAuth routes (GET /api/auth/google and /api/auth/google/callback)
+// are defined in web.php because they handle redirects and don't need /api prefix
 
 // Protected routes (require authentication)
 Route::middleware('auth:sanctum')->group(function () {
