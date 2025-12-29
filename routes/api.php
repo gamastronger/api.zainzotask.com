@@ -52,3 +52,20 @@ Route::get('/health-check', function () {
         'timestamp' => now()
     ]);
 });
+
+// Debug endpoint to check authentication status (remove in production)
+Route::get('/debug/auth', function (Illuminate\Http\Request $request) {
+    return response()->json([
+        'session_id' => session()->getId(),
+        'has_session' => $request->hasSession(),
+        'session_data' => session()->all(),
+        'auth_check' => Auth::check(),
+        'auth_id' => Auth::id(),
+        'auth_user' => Auth::user(),
+        'guard' => Auth::getDefaultDriver(),
+        'web_guard_check' => Auth::guard('web')->check(),
+        'web_guard_id' => Auth::guard('web')->id(),
+        'cookies' => array_keys($request->cookies->all()),
+        'request_user' => $request->user(),
+    ]);
+});

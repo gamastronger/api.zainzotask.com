@@ -5,8 +5,8 @@ namespace App\Http\Controllers\Api;
 use App\Http\Controllers\Controller;
 use App\Models\User;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Log;
-use Illuminate\Support\Facades\Cookie;
 use Google\Client as GoogleClient;
 
 /**
@@ -132,27 +132,25 @@ class AuthController extends Controller
                 $this->createDefaultBoard($user);
             }
 
-            // Generate Sanctum authentication token
-            $sanctumToken = $user->createToken('auth_token')->plainTextToken;
+            // CRITICAL: Log the user into the web guard (session-based authentication)
+            // This establishes the user's session which Sanctum will use for authentication
+            Auth::guard('web')->login($user, true); // true = remember me
 
-            Log::info('User authenticated successfully', ['user_id' => $user->id]);
+            // Regenerate session ID to prevent session fixation attacks
+            $request->session()->regenerate();
 
-            // Store token in HTTP-only cookie (secure, not accessible via JavaScript)
-            $cookie = cookie(
-                'auth_token',              // name
-                $sanctumToken,             // value
-                60 * 24 * 7,              // minutes (7 days)
-                '/',                       // path
-                config('session.domain'),  // domain
-                true,                      // secure (HTTPS only)
-                true,                      // httpOnly
-                false,                     // raw
-                'strict'                   // sameSite
-            );
+            Log::info('✓ User authenticated and session established', [
+                'user_id' => $user->id,
+                'user_email' => $user->email,
+                'session_id' => session()->getId(),
+                'auth_check' => Auth::check(),
+                'guard' => Auth::getDefaultDriver()
+            ]);
 
-            // Redirect to frontend success page with cookie
-            // No sensitive data in URL - frontend will call /api/auth/me with cookie
-            return redirect(config('app.frontend_url') . '/auth/success')->cookie($cookie);
+            // Redirect to frontend success page
+            // The Laravel session cookie is automatically set via web middleware
+            // Frontend will call /api/auth/me with session cookie (via credentials: 'include')
+            return redirect(config('app.frontend_url') . '/auth/success');
 
         } catch (\Exception $e) {
             Log::error('OAuth callback exception', [
@@ -167,25 +165,82 @@ class AuthController extends Controller
      * Get authenticated user
      *
      * Returns the currently authenticated user's data.
-     * Requires Sanctum token (from cookie or Authorization header).
+     * Uses session-based authentication via Sanctum's stateful guard.
+     *
+     * CRITICAL: This endpoint uses auth:sanctum middleware which checks:
+     * 1. Session authentication (if request is from stateful domain)
+     * 2. Bearer token authentication (fallback)
      *
      * @param Request $request
      * @return \Illuminate\Http\JsonResponse
      */
     public function me(Request $request)
     {
-        return response()->json([
-            'success' => true,
-            'data' => [
-                'user' => $request->user()
-            ]
-        ]);
+        try {
+            // Log incoming request details for debugging
+            Log::info('→ /api/auth/me called', [
+                'session_id' => session()->getId(),
+                'has_session' => $request->hasSession(),
+                'auth_check' => Auth::check(),
+                'guard' => Auth::getDefaultDriver(),
+                'user_id' => Auth::id(),
+                'cookies' => array_keys($request->cookies->all()),
+                'origin' => $request->header('Origin'),
+                'referer' => $request->header('Referer')
+            ]);
+
+            // Get authenticated user via Sanctum middleware
+            // The auth:sanctum middleware should have already authenticated the user
+            $user = $request->user();
+
+            if (!$user) {
+                // This should rarely happen if middleware is working correctly
+                Log::warning('✗ User not authenticated in /api/auth/me', [
+                    'session_id' => session()->getId(),
+                    'session_data' => session()->all(),
+                    'auth_check' => Auth::check(),
+                    'guard_web_check' => Auth::guard('web')->check(),
+                ]);
+
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Unauthenticated'
+                ], 401);
+            }
+
+            Log::info('✓ User authenticated successfully', [
+                'user_id' => $user->id,
+                'user_email' => $user->email
+            ]);
+
+            return response()->json([
+                'success' => true,
+                'data' => [
+                    'user' => $user
+                ]
+            ]);
+
+        } catch (\Exception $e) {
+            // Catch any unexpected errors to prevent 500 responses
+            Log::error('✗ Exception in /api/auth/me', [
+                'message' => $e->getMessage(),
+                'file' => $e->getFile(),
+                'line' => $e->getLine(),
+                'trace' => $e->getTraceAsString()
+            ]);
+
+            return response()->json([
+                'success' => false,
+                'message' => 'Internal server error',
+                'error' => config('app.debug') ? $e->getMessage() : 'An error occurred'
+            ], 500);
+        }
     }
 
     /**
      * Logout user
      *
-     * Revokes the current Sanctum token and clears the auth cookie.
+     * Logs out the user from the session and invalidates the session.
      *
      * @param Request $request
      * @return \Illuminate\Http\JsonResponse
@@ -193,24 +248,47 @@ class AuthController extends Controller
     public function logout(Request $request)
     {
         try {
-            // Revoke current access token
-            $request->user()->currentAccessToken()->delete();
+            $user = $request->user();
 
-            Log::info('User logged out', ['user_id' => $request->user()->id]);
+            if (!$user) {
+                Log::warning('Logout attempt without authentication');
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Not authenticated'
+                ], 401);
+            }
 
-            // Clear the auth cookie
-            $cookie = Cookie::forget('auth_token');
+            Log::info('User logging out', [
+                'user_id' => $user->id,
+                'user_email' => $user->email
+            ]);
+
+            // Log out from the web guard
+            Auth::guard('web')->logout();
+
+            // Invalidate the session
+            $request->session()->invalidate();
+
+            // Regenerate CSRF token
+            $request->session()->regenerateToken();
+
+            Log::info('✓ User logged out successfully');
 
             return response()->json([
                 'success' => true,
                 'message' => 'Logged out successfully'
-            ])->cookie($cookie);
+            ]);
 
         } catch (\Exception $e) {
-            Log::error('Logout failed', ['error' => $e->getMessage()]);
+            Log::error('✗ Logout failed', [
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString()
+            ]);
+
             return response()->json([
                 'success' => false,
-                'message' => 'Logout failed'
+                'message' => 'Logout failed',
+                'error' => config('app.debug') ? $e->getMessage() : 'An error occurred'
             ], 500);
         }
     }
